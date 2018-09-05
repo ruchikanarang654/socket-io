@@ -14,7 +14,7 @@ io.on('connection', function (socket) {
 
     var headers = {
       //'Authorization': 'Bearer ' + inputs.token,
-      'Authorization': 'Bearer ya29.GlwPBqDWma7mhFW9nfWrgvT0Q6UegwSfWl-edy5EaqVsiyb4FeVJ4eFa-YfEwQVC7zU9iMp00T_TbYEhqy_wBroENCA7DzZrl6sFmNfGGfKpux5q8_iYFzjDd38Sfw',
+      'Authorization': 'Bearer ya29.GlwPBooNNPBrY5P84ztDC0dnHLFdmg16_qDcU_RkaxS5KOtsJQXXL7CgCkT9B5TU7HPspG417sTDJBq-5UQq3qwpi6xXVH4-kSuQhfKvBuynNBd-WxzWX3AUAd4dWQ',
       'Content-Type': 'application/json; charset=utf-8'
     }
     console.log('request-headers', headers);
