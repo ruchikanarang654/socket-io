@@ -36,7 +36,8 @@ io.on('connection', function (socket) {
         //io.emit('chat message', body.queryResult.fulfillmentText);
       }
     })
-    io.emit('chat message', msg);
+    io.to(`${socketId}`).emit('chat message', msg);
+    //io.emit('chat message', msg);
     //   socket.emit
   });
 });
