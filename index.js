@@ -17,7 +17,7 @@ io.on('connection', function (socket) {
 
     var headers = {
       //'Authorization': 'Bearer ' + inputs.token,
-      'Authorization': 'Bearer ya29.GlwQBmUUOk3dQ_8sl1SR_ESJM1d8I_WsJCBW4PubTq7yugBVC5nqUd-O7lkxgqJ-fQvptWxFBGjssVMMX5YJ8_XsOivv_LnU-LTdnkWugZixvldspydUOAQmqNqCFQ',
+      'Authorization': 'Bearer ya29.GlwRBpibHWP8KGTt-5DXscyThXnU_vVMfwE8xZmlGl0jzhNlrS2G3mPW4Q6x04N-4caPYtHOMdco7zlFukCpasaaZVhgQpABois4qAtL78YO92UjGoeorRdKMqVEbA',
       'Content-Type': 'application/json; charset=utf-8'
     }
     
