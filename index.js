@@ -20,7 +20,7 @@ io.on('connection', function (socket) {
       'Authorization': 'Bearer ya29.GlwRBpibHWP8KGTt-5DXscyThXnU_vVMfwE8xZmlGl0jzhNlrS2G3mPW4Q6x04N-4caPYtHOMdco7zlFukCpasaaZVhgQpABois4qAtL78YO92UjGoeorRdKMqVEbA',
       'Content-Type': 'application/json; charset=utf-8'
     }
-    
+
     var options = {
       // url: 'https://dialogflow.googleapis.com/v2/',
       url: 'https://dialogflow.googleapis.com/v2/projects/newagent-148ea/agent/sessions/123456789:detectIntent',
