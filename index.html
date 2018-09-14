@@ -57,10 +57,7 @@
   <script>
     var socket = io();
     function suggestionChip(){
-      console.log($('#data-id').attr());
-      return false;
         socket.emit('chat', $('#data-id').val());
-        console.log($('.suggestion-chips').val());
         $('.suggestion-chips').val('');
         return false;
     }
@@ -72,76 +69,52 @@
         return false;
       });
       socket.on('chat message', function (msg) {
-       //console.log('typeof', typeof(msg));
         if (typeof(msg) === 'string'){
           $('#messages').append($('<li>').text(msg));
         }
         if (msg.suggestions !== undefined) {
-          //console.log('messages suggestion', msg.suggestions);
-          //console.log('Type of', typeof (msg.suggestions)); //object
+
           var i = 0;
           msg.suggestions.map(function (item) {
-            //console.log(item.title)
-            //$('#messages').append($('<li>').text(item.title));
               $('#messages').append('<li><input type="button" data-id= "'+i+'" class="suggestion-chips" value="'+ item.title+'"  /></li>');
               i++;
           })
         }
         else if(msg.items){
-          console.log(msg.items);
           var i = 0;
           msg.items.map(function (item){
-            //console.log(item.info.key);
             $('#messages').append('<li><input type="button" data-id= "'+i+'" class="list-select" value="'+ item.info.key+'"  /></li>');
             i++;
           })
         }
         else if(msg.linkOutSuggestion){
-          //console.log(msg.linkOutSuggestion);
           $('#messages').append('<li><a href="'+msg.linkOutSuggestion.uri+'" target="_blank">'+msg.linkOutSuggestion.destinationName+'</a></li>');
         }
         else if(msg.basicCard){
-          //  console.log('typeof', typeof(msg.basicCard));
-          // console.log('Basic card');
-          // console.log(msg);
           var title, uri_title, url;
           $.each(msg.basicCard, function( index, value ) {
-            //console.log(index);
             if(index == 'title'){
               title = value;
             }
           });
-          msg.basicCard.buttons.map(function (item){
-              //$.each(msg.basicCard.buttons, function( index, value ) {
-              
-                console.log(item.title);
-                console.log(item.openUriAction);
+          msg.basicCard.buttons.map(function (item){       
                 if(item.title !== undefined){
                   uri_title = item.title;
-                  console.log('title'+uri_title);
                 }
                 if(item.openUriAction !== undefined){
                   url = item.openUriAction.uri;
-                  console.log('url'+ url);
                 }
               });
             
           $.each(msg.basicCard.image, function( index, value ) {
-            //console.log(index);
             $('#messages').append('<div><li><img src="'+value+'" alt="'+title+'" width="100" height="100"></li><span>'+uri_title+'</span><br><a href="'+url+'" target="_blank">For more details</a><div>');
             //   //$('#messages').append('<div><li><img src="'+value+'" alt="'+title+'" width="100" height="100"></li></div>');
 
          });
          return false;
-           msg.fulfillmentMessages.basicCard.map(function(item){
-             console.log(item.title, item.formattedText, item.image, item.buttons);
-           //$('#messages').append('<li><img src="'++'" alt="Girl in a jacket"></a></li>');
-           })
         }
         else{
-          console.log('List items present');
         }
-        // $('#messages').append($('<li>').text(msg));
 
       });
     });
@@ -149,18 +122,14 @@
        var C_val = $(this).val();
        $(".list-select").hide();
        socket.emit('chat message', C_val);
-        //console.log($('.suggestion-chips').val());
         $('.list-select').val('');
-       //alert(val);
     });
 
     $(document).on('click','.suggestion-chips', function(){
        var C_val = $(this).val();
        $(".suggestion-chips").hide();
        socket.emit('chat message', C_val);
-        //console.log($('.suggestion-chips').val());
         $('.suggestion-chips').val('');
-       //alert(val);
     });
   </script>
 </head>
