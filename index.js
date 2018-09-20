@@ -1,32 +1,109 @@
 var app = require('express')();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
-var request = require('request');
+var mod_request= require('request');
 var port = process.env.PORT || 3000;
 var qs = require("querystring");
 var http_request = require("https");
 var LocalStorage = require('node-localstorage').LocalStorage,
-localStorage = new LocalStorage('./scratch');
+  localStorage = new LocalStorage('./scratch');
 var dateTime = require('node-datetime');
 var date = dateTime.create();
+var Connection = require('tedious').Connection;
+var Request = require('tedious').Request;
+var TYPES = require('tedious').TYPES;
 
 app.get('/', function (req, res) {
   res.sendFile(__dirname + '/index.html');
 });
 
 io.on('connection', function (socket) {
+  function GetData(message, cb){
+
+    var config =
+                {
+                    userName: 'SystematixBOT', 
+                    password: 'SiplBOT@4844', 
+                    server: 'systematixbotserver.database.windows.net', 
+                    options:
+                        {
+                            database: 'HRBot' 
+                            , encrypt: true
+                        }
+                }
+            var connection = new Connection(config);
+
+            connection.on('connect', function (err) {
+                if (err) {
+                    console.log(err)
+                }
+                else {
+                    queryDatabase()
+                }
+            }
+            );
+    
+            function queryDatabase() {
+                console.log('Reading rows from the Table...');
+                var sql = "select * from EmployeeDetail where EmployeeEmail='" + message.usrName + "' and Password='" + message.pwd + "'";
+                //console.log('query', sql);
+                // Read all rows from table
+                request = new Request(sql,
+                    function (err, rowCount, rows) {
+                        if (rowCount === 1) {
+                            cb(rowCount);
+                            //io.to(`${socketId}`).emit('chat message', 'Login successful');
+                            //process.exit();
+                        }
+                        else {
+                            console.log('Error', err);
+                        }
+                        //console.log(rowCount + ' row(s) returned');
+                        //process.exit();
+                    }
+                );
+    
+                request.on('row', function (columns) {
+                    //console.log(columns.value);
+                    columns.forEach(function (column) {
+                        console.log("%s", column.value);
+                    });
+                });
+                connection.execSql(request);
+            }
+    }
   var socketId = socket.id;
 
   socket.on('chat message', function (msg) {
-    console.log('socket id:' + socket.id);
+    var inputbody;
+    //console.log('socket id:' + socket.id);
     console.log('type of message', typeof (msg));
     console.log('Message', msg);
     //io.to(`${socketId}`).emit('chat message', msg);
-    var inputbody = { "query_input": { "text": { "text": msg, "language_code": "en" } } }
+    inputbody = { "query_input": { "text": { "text": msg, "language_code": "en" } } }
+    //console.log('Input body', inputbody)
     var access_token = '';
 
+    if(typeof(msg) === 'object'){
+      //console.log('Value of message as object', msg);
+      GetData(msg, function(count){
+          //console.log("hello");
+          //console.log('Count of Data', count);
+          if (count === 1){
+            io.to(`${socketId}`).emit('chat message', 'Login successful');
+            //socket.emit('chat message', 'Login successful');
+            // inputbody = { "query_input": { "text": { "text": 'Login successful', "language_code": "en" } } }
+            // console.log('Input body', inputbody);
+          }
+          else{
+            io.to(`${socketId}`).emit('chat message', 'Error occured');
+          }
+          
+      })
+  }
+
     //Function to generate access token from refresh token.
-    function GenerateAccessToken(cb){
+    function GenerateAccessToken(cb) {
       var options_request = {
         "method": "POST",
         "hostname": "accounts.google.com",
@@ -37,20 +114,20 @@ io.on('connection', function (socket) {
           "cache-control": "no-cache",
         }
       };
-  
+
       var req = http_request.request(options_request, function (res) {
         var chunks = [];
-  
+
         res.on("data", function (chunk) {
           chunks.push(chunk);
           return chunk;
         });
-  
+
         res.on("end", function () {
           var body = Buffer.concat(chunks);
           var json_body = JSON.parse(body.toString());
           access_token = json_body.access_token;
-          console.log('access token ', access_token);
+          //console.log('access token ', access_token);
           cb(access_token);
         })
       })
@@ -71,117 +148,144 @@ io.on('connection', function (socket) {
       req.end();
 
     }
-    GenerateAccessToken(function(id){
+    GenerateAccessToken(function (id) {
       console.log('Value of id', id);
       if (!localStorage.getItem('token') || (!localStorage.getItem('time'))) {
         console.log('if');
         localStorage.setItem('time', date.now());
         localStorage.setItem('token', id);
-        console.log(localStorage.getItem('token'));
+        //console.log(localStorage.getItem('token'));
         //io.to(`${socketId}`).emit('chat message', localStorage.getItem('token'));
-    } 
-    else {
+      }
+      else {
         console.log('else');
-        var diff = date.now() - localStorage.getItem('time');
+        var diff = date.now() - parseInt(localStorage.getItem('time'));
         console.log(diff);
-        if(diff > 3500000){
-            console.log('else-if');
-            localStorage.setItem('time', date.now());
-            localStorage.setItem('token', id);
-            console.log(localStorage.getItem('token'));
-            //io.to(`${socketId}`).emit('chat message', localStorage.getItem('token'));
+        if (diff > 3500000) {
+          console.log('else-if');
+          localStorage.setItem('time', date.now());
+          localStorage.setItem('token', id);
+          //console.log(localStorage.getItem('token'));
+          //io.to(`${socketId}`).emit('chat message', localStorage.getItem('token'));
         }
       }
     })
-        var headers = {
-          'Authorization': 'Bearer ' + localStorage.getItem('token'),
-          //'Authorization': 'Bearer ya29.GlwVBnl6y2ipWJMwf1iEsXbzl7gU4QE6x0UEgFm8QJjaSLTAG4Gm4v9oIZAbpki4CC2FYYd-ifRMWehd9MQ3cjVXYsXZdx0i5CkHDPmwfhGwu0nCUbQr-FQoQ9e-vg',
-          'Content-Type': 'application/json; charset=utf-8'
-        }
-        console.log('headers', headers);
+    var headers = {
+      'Authorization': 'Bearer ' + localStorage.getItem('token'),
+      //'Authorization': 'Bearer ya29.GlwVBnl6y2ipWJMwf1iEsXbzl7gU4QE6x0UEgFm8QJjaSLTAG4Gm4v9oIZAbpki4CC2FYYd-ifRMWehd9MQ3cjVXYsXZdx0i5CkHDPmwfhGwu0nCUbQr-FQoQ9e-vg',
+      'Content-Type': 'application/json; charset=utf-8'
+    }
+    //console.log('headers', headers);
 
-        var options = {
-          // url: 'https://dialogflow.googleapis.com/v2/',
-          url: 'https://dialogflow.googleapis.com/v2/projects/ftabuddy/agent/sessions/123456789:detectIntent',
-          //url: 'https://dialogflow.googleapis.com/v2/projects/newagent-148ea/agent/sessions/123456789:detectIntent',
-          method: 'POST',
-          headers: headers,
-          json: inputbody
-        }
+    var options = {
+      // url: 'https://dialogflow.googleapis.com/v2/',
+      url: 'https://dialogflow.googleapis.com/v2/projects/ftabuddy/agent/sessions/123456789:detectIntent',
+      //url: 'https://dialogflow.googleapis.com/v2/projects/newagent-148ea/agent/sessions/123456789:detectIntent',
+      method: 'POST',
+      headers: headers,
+      json: inputbody
+    }
 
-        request(options, function (error, response, body) {
-          //console.log('options', options);
-          if (!error && response.statusCode === 200) {
-            if (body.queryResult.fulfillmentMessages[0].platform !== 'ACTIONS_ON_GOOGLE') {
-              //console.log('Platform not', body.queryResult.fulfillmentText)
-              io.to(`${socketId}`).emit('chat message', body.queryResult.fulfillmentText);
-            }
-            else {
-              //List template
-              if (body.queryResult.fulfillmentMessages[0].listSelect !== undefined || body.queryResult.fulfillmentMessages[1].listSelect !== undefined) {
-                if (body.queryResult.fulfillmentMessages[0].simpleResponses !== undefined) {
-                  io.to(`${socketId}`).emit('chat message', body.queryResult.fulfillmentMessages[0].simpleResponses.simpleResponses[0].textToSpeech);
-                  io.to(`${socketId}`).emit('chat message', body.queryResult.fulfillmentMessages[1].listSelect.title);
-                  console.log('items list', body.queryResult.fulfillmentMessages[1].listSelect.items);
-                  io.to(`${socketId}`).emit('chat message', body.queryResult.fulfillmentMessages[1].listSelect);
-                }
-                else {
-                  io.to(`${socketId}`).emit('chat message', body.queryResult.fulfillmentMessages[0].listSelect.title);
-                  console.log('items in list', body.queryResult.fulfillmentMessages[0].listSelect.items);
-                  io.to(`${socketId}`).emit('chat message', body.queryResult.fulfillmentMessages[0].listSelect);
-                }
-              }
-              //Suggestion chips and basic card with suggestion chips
-              else if(body.queryResult.fulfillmentMessages[0].suggestions !== undefined || body.queryResult.fulfillmentMessages[1].suggestions !== undefined){
-                if(body.queryResult.fulfillmentMessages[0].simpleResponses !== undefined){
-                  console.log('Suggestion chips');
-                  io.to(`${socketId}`).emit('chat message', body.queryResult.fulfillmentMessages[0].simpleResponses.simpleResponses[0].textToSpeech);
-                  io.to(`${socketId}`).emit('chat message', body.queryResult.fulfillmentMessages[1].suggestions);
-                  //console.log(body.queryResult.fulfillmentMessages[1].suggestions);
-                }
-                else{
-                  console.log('Only quick replies');
-                  if(body.queryResult.fulfillmentMessages[0].basicCard !== undefined){
-                    console.log('Basic card present');
-                    console.log('basic card result', body.queryResult.fulfillmentMessages[0])
-                    io.to(`${socketId}`).emit('chat message', body.queryResult.fulfillmentMessages[0]);
-                    io.to(`${socketId}`).emit('chat message', body.queryResult.fulfillmentMessages[1].suggestions);
-                  }   
-                }
-              }
-              else if(body.queryResult.fulfillmentMessages[0].simpleResponses !== undefined){
-                  console.log('Simple response');                 
-                  // io.to(`${socketId}`).emit('chat message', body.queryResult.fulfillmentMessages[0].simpleResponses.simpleResponses[0].textToSpeech);
-                  if(body.queryResult.fulfillmentMessages[1] !== undefined){
-                    io.to(`${socketId}`).emit('chat message', body.queryResult.fulfillmentMessages[0].simpleResponses.simpleResponses[0].textToSpeech);
-                    console.log('Link out messages', body.queryResult.fulfillmentMessages[1]);
-                    io.to(`${socketId}`).emit('chat message', body.queryResult.fulfillmentMessages[1]);
-                  }
-                  else{
-                    io.to(`${socketId}`).emit('chat message', body.queryResult.fulfillmentMessages[0].simpleResponses.simpleResponses[0].textToSpeech);
-                  }
-              }
-              else if(body.queryResult.fulfillmentMessages[0].basicCard !== undefined){
-                console.log('Basic card');
-              }
-              //Simple response
-              else {
-                io.to(`${socketId}`).emit('chat message', 'Something went wrong');
-              }
-            }
+    //console.log('Value of options', options.json.query_input.text);
+
+    mod_request(options, function (error, response, body) {
+      //console.log('options', options);
+      if (!error && response.statusCode === 200) {
+        //console.log('Response', response);
+        if (body.queryResult.intent.displayName === 'Login_Intent') {
+          //console.log('login intent', body.queryResult);
+          io.to(`${socketId}`).emit('chat message', body.queryResult);
+        }
+        else if(body.queryResult.intent.displayName === 'Login_Successful_Intent'){
+          //console.log('login intent', body.queryResult.fulfillmentText);
+          io.to(`${socketId}`).emit('chat message', body.queryResult.fulfillmentText);
+          if (body.queryResult.fulfillmentMessages[0].platform !== 'ACTIONS_ON_GOOGLE') {
+            //console.log('Suggestion chips from login success intent',body.queryResult.fulfillmentMessages[1]);
+            io.to(`${socketId}`).emit('chat message', body.queryResult.fulfillmentMessages[1].suggestions);
+          }          
+        }
+        else if(body.queryResult.intent.displayName === 'Total_Number_VAT_Users_Intent'){
+          console.log('VAT users', body.queryResult.fulfillmentMessages[0].text.text[0]);
+          io.to(`${socketId}`).emit('chat message', body.queryResult.fulfillmentMessages[0].text.text[0]);
+        }
+        else {
+          if (body.queryResult.fulfillmentMessages[0].platform !== 'ACTIONS_ON_GOOGLE') {
+            //console.log('Platform not', body.queryResult.fulfillmentText)
+            io.to(`${socketId}`).emit('chat message', body.queryResult.fulfillmentText);
           }
+        
           else {
-            console.log('Error', error);
-            console.log('Response code', response.statusCode);
+            //List template
+            // if (body.queryResult.fulfillmentMessages[0].listSelect !== undefined || body.queryResult.fulfillmentMessages[1].listSelect !== undefined) {
+              if (body.queryResult.fulfillmentMessages[0].listSelect !== undefined || body.queryResult.fulfillmentMessages[1] !== undefined) {
+              if (body.queryResult.fulfillmentMessages[0].simpleResponses !== undefined) {
+                //io.to(`${socketId}`).emit('chat message', body.queryResult.fulfillmentMessages[0].simpleResponses.simpleResponses[0].textToSpeech);
+                //io.to(`${socketId}`).emit('chat message', body.queryResult.fulfillmentMessages[1].listSelect.title);
+                io.to(`${socketId}`).emit('chat message', body.queryResult.fulfillmentMessages[0]);
+                io.to(`${socketId}`).emit('chat message', body.queryResult.fulfillmentMessages[2]);
+              }
+              else {
+                //io.to(`${socketId}`).emit('chat message', body.queryResult.fulfillmentMessages[0].listSelect.title);
+                //console.log('items in list', body.queryResult.fulfillmentMessages[0].listSelect.items);
+                io.to(`${socketId}`).emit('chat message', body.queryResult.fulfillmentMessages[0]);
+              }
+            }
+            //Suggestion chips and basic card with suggestion chips
+            else if (body.queryResult.fulfillmentMessages[0].suggestions !== undefined || body.queryResult.fulfillmentMessages[1] !== undefined) {
+              if (body.queryResult.fulfillmentMessages[0].simpleResponses !== undefined) {
+                console.log('Suggestion chips');
+                //io.to(`${socketId}`).emit('chat message', body.queryResult.fulfillmentMessages[0].simpleResponses.simpleResponses[0].textToSpeech);
+                io.to(`${socketId}`).emit('chat message', body.queryResult.fulfillmentMessages[0]);
+                io.to(`${socketId}`).emit('chat message', body.queryResult.fulfillmentMessages[1].suggestions);
+                //console.log(body.queryResult.fulfillmentMessages[1].suggestions);
+              }
+              else {
+                //console.log('Only quick replies');
+                if (body.queryResult.fulfillmentMessages[0].basicCard !== undefined) {
+                  console.log('Basic card present');
+                  //console.log('basic card result', body.queryResult.fulfillmentMessages[0])
+                  io.to(`${socketId}`).emit('chat message', body.queryResult.fulfillmentMessages[0]);
+                  io.to(`${socketId}`).emit('chat message', body.queryResult.fulfillmentMessages[1].suggestions);
+                }
+              }
+            }
+            else if (body.queryResult.fulfillmentMessages[0].simpleResponses !== undefined) {
+              console.log('Simple response');
+              // io.to(`${socketId}`).emit('chat message', body.queryResult.fulfillmentMessages[0].simpleResponses.simpleResponses[0].textToSpeech);
+              if (body.queryResult.fulfillmentMessages[1] !== undefined) {
+                io.to(`${socketId}`).emit('chat message', body.queryResult.fulfillmentMessages[0]);
+                //console.log('Link out messages', body.queryResult.fulfillmentMessages[1]);
+                io.to(`${socketId}`).emit('chat message', body.queryResult.fulfillmentMessages[1]);
+              }
+              else {
+                io.to(`${socketId}`).emit('chat message', body.queryResult.fulfillmentMessages[0]);
+              }
+            }
+            //Simple response
+            else {
+              io.to(`${socketId}`).emit('chat message', 'Something went wrong');
+            }
           }
-        })
-        io.to(`${socketId}`).emit('chat message', msg);
-      });
-
+        }
+      }
+      else {
+        console.log('Error', error);
+        console.log('Response code', response.statusCode);
+      }
     })
+    if(msg === 'Login successful'){
+       //console.log('Successful login');
+    }
+    else{
+      io.to(`${socketId}`).emit('chat message', msg);
+    }
+    
+
+  });
+
+})
 
 http.listen(port, function () {
   console.log('listening on *:', port);
 });
-
 
