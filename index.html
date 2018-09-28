@@ -81,16 +81,9 @@
   </style>
   <script src="https://code.jquery.com/jquery-1.10.2.js"></script>
   <script src="/socket.io/socket.io.js"></script>
-  <!-- <script>
-      var socket = io();
-    </script>  -->
   <script>
     var socket = io();
-    function suggestionChip() {
-      socket.emit('chat message', $('#data-id').val());
-      $('.suggestion-chips').val('');
-      return false;
-    }
+    //function for login button click
     function OnLoginButtonClick() {
       var obj = {
         usrName: $("#txtUserName").val(),
@@ -101,52 +94,43 @@
       //socket.emit('data', password);
       if (obj.usrName !== "" & obj.pwd !== "") {
         //alert(username + "," + password);
+        $("#lblMessage").text("");
+        $("#dvLogin").hide();
         $('#txtUserName').val('');
         $('#txtPassword').val('');
       }
       else {
         console.log('Error');
+        $('#messages').append($('<li class="response-messages">').text('Please enter the correct details'));
       }
     }
+    //Get the input value of user
     $(function () {
       $('form').submit(function () {
         socket.emit('chat message', $('#m').val());
         $('#m').val('');
         return false;
       });
-      //Data event
-      // socket.on('data', function(message){
-      //   console.log('Message after login',message);
-      //   $('#messages').append($('<li class="request-messages">').text(message));
-      //     socket.emit('chat message', message);
-      // })
       var count = 0;
+      //Output the final message to users through the socket.
       socket.on('chat message', function (msg) {
-        //console.log('message', msg);
         if(msg === 'login'){
           count = 0;
         }
         while (msg === 'Login successful' && count < 1) {
-          console.log('Message from chat message', msg);
+          //console.log('Message from chat message', msg);
           socket.emit('chat message', msg);
           count ++;
         }
-        //console.log('Value of count' , count);
-        // if(msg === 'Login successful'){
-        //       console.log('Message from chat message', msg);
-        //       socket.emit('chat message', msg);
-        //     return false;
-        //     }
         if (typeof (msg) === 'string' ) {
           if(msg === 'Login successful' && count === 1){
-            console.log('message from success', msg);
             $('#messages').append($('<li class="response-messages">').text(msg));
           }
           else{
-            console.log('Hello 1');
             $('#messages').append($('<li class="response-messages">').text(msg));
           }
         }
+        //Login form template
         if (msg.queryText == 'login') {
           var loginHTML = '<div class="bubble bot" id="dvLogin" style="border: 1px solid black">';
           loginHTML = loginHTML + 'Username: <input id="txtUserName" type="text" name="user">';
@@ -155,6 +139,7 @@
           loginHTML = loginHTML + '<br/><br/><label id=lblMessage  style="display:none"></label></div>';
           $('#messages').append($('<li class="response-messages">').html(loginHTML));
         }
+        //Suggestion chips as response
         if (msg.suggestions !== undefined) {
           var i = 0;
           msg.suggestions.map(function (item) {
@@ -162,31 +147,30 @@
             i++;
           })
         }
+        //List as a response
         else if (msg.listSelect) {
           var i = 0;
           $.each(msg.listSelect, function (index, value) {
-            //console.log(index, value);
             if (typeof (value) == 'string') {
               $('#messages').append($('<li class="response-messages">').text(value));
             }
-
           });
           msg.listSelect.items.map(function (item) {
-            //console.log('List items', item);
             $('#messages').append('<li class="response-messages"><input type="button" data-id= "' + i + '" class="list-select" value="' + item.info.key + '"  /></li>');
             i++;
           })
         }
+        //Simple response as response
         else if (msg.simpleResponses) {
           $.each(msg.simpleResponses, function (index, value) {
-            //console.log(value);
-            //console.log('Object',value[0].textToSpeech);
             $('#messages').append($('<li class="response-messages">').text(value[0].textToSpeech));
           })
         }
+        //Link out suggestion as response
         else if (msg.linkOutSuggestion) {
           $('#messages').append('<li class="response-messages"><a href="' + msg.linkOutSuggestion.uri + '" target="_blank">' + msg.linkOutSuggestion.destinationName + '</a></li>');
         }
+        //Basic card as a response
         else if (msg.basicCard) {
           var title, uri_title, url;
           $.each(msg.basicCard, function (index, value) {
@@ -205,14 +189,12 @@
 
           $.each(msg.basicCard.image, function (index, value) {
             $('#messages').append('<div><li class="response-messages"><img src="' + value + '" alt="' + title + '" width="100" height="100"></li><span>' + uri_title + '</span><br><a href="' + url + '" target="_blank">For more details</a><div>');
-            //   //$('#messages').append('<div><li><img src="'+value+'" alt="'+title+'" width="100" height="100"></li></div>');
-
           });
           return false;
         }
         else {
+          $('#messages').append('<li class= "response-messages"')
         }
-
       });
     });
     $(document).on('click', '.list-select', function () {
@@ -226,7 +208,7 @@
       var C_val = $(this).val();
       $(".suggestion-chips").hide();
       socket.emit('chat message', C_val);
-      $('.suggestion-chips').val('');
+      //$('.suggestion-chips').val('');
     });
   </script>
 </head>
