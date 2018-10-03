@@ -71,7 +71,7 @@ io.on('connection', function (socket) {
           }
           else {
             if (message.usrName && message.pwd)
-            var responseMsg = 'Email or password do not match';
+              var responseMsg = 'Email or password do not match';
             io.to(`${socketId}`).emit('chat message', responseMsg);
           }
         }
@@ -87,10 +87,10 @@ io.on('connection', function (socket) {
   }
 
   function FTAConversation(idOfSession, respMessage) {
-    if(responseMessage !== '' && responseMessage !== undefined){
-      responseMessage += ' '+respMessage;
+    if (responseMessage !== '' && responseMessage !== undefined) {
+      responseMessage += ' ' + respMessage;
     }
-    else{
+    else {
       responseMessage = respMessage;
     }
 
@@ -129,7 +129,7 @@ io.on('connection', function (socket) {
       request.addParameter('UserId', TYPES.VarChar, '');
       request.addParameter('Conversation', TYPES.VarChar, responseMessage);
       request.addOutputParameter('IsSuccess', TYPES.Bit);
-      request.on('returnValue', function(paramName, value, metadata) {
+      request.on('returnValue', function (paramName, value, metadata) {
         console.log(paramName + ' : ' + value);
       });
       // request.on('row', function (columns) {
@@ -230,6 +230,7 @@ io.on('connection', function (socket) {
       return new Promise(function (resolve) {
         mod_request(options, function (error, response, body) {
           if (!error && response.statusCode === 200) {
+
             resolve(body);
           }
         })
@@ -238,17 +239,23 @@ io.on('connection', function (socket) {
 
     //Function which takes input as the response body generated from Request sent to Dialogflow and sends the final message to socket
     function ResponseToDialogflow(body) {
-      if (body.queryResult.intent.displayName === 'Login_Intent') {
+      if (body.queryResult.action !== undefined && body.queryResult.action !== 'input.welcome' && body.queryResult.action !== 'input.unknown') {
+        console.log("Action present", body.queryResult);
+        // console.log("Action present", body.queryResult.fulfillmentMessages);
+        io.to(`${socketId}`).emit('chat message', body.queryResult);
+      }
+
+      else if (body.queryResult.intent.displayName === 'Login_Intent') {
         console.log('Login Intent');
-        if (isLoggedin){
+        if (isLoggedin) {
           io.to(`${socketId}`).emit('chat message', body.queryResult);
         }
-        else{
+        else {
           // FTAConversation(socket.handshake.sessionID, body.queryResult.queryText);
           io.to(`${socketId}`).emit('chat message', body.queryResult);
         }
-        
       }
+
       else if (body.queryResult.intent.displayName === 'Login_Successful_Intent') {
         console.log('Login Successful Intent');
         // FTAConversation(socket.handshake.sessionID, body.queryResult.fulfillmentText);

@@ -59,7 +59,7 @@
     .response-messages {
       float: right;
       width: 50%;
-      margin-left: 68%;      
+      margin-left: 68%;
     }
 
     /* <!-- 
@@ -83,26 +83,27 @@
   <script src="/socket.io/socket.io.js"></script>
   <script>
     var socket = io();
-    var obj;
     //function for login button click
     function OnLoginButtonClick() {
-      
-      obj = {
+
+console.log('$("#txtUserName").val()', $("#txtUserName").val());
+    var  obj = {
         usrName: $("#txtUserName").val(),
         pwd: $("#txtPassword").val()
       }
       //console.log('Object values', obj);
       socket.emit('chat message', obj);
-      console.log('Object value' , obj);
+      console.log('Object value', obj);
       //socket.emit('data', password);
       if (obj.usrName !== "" & obj.pwd !== "") {
-        $("#lblMessage").text("");
-            $("#lblMessage").hide();
+        // $("#lblMessage").text("");
+        // $("#lblMessage").hide();
         //alert(username + "," + password);
         $("#lblMessage").text("");
         $("#dvLogin").hide();
-        $('#txtUserName').val('');
-        $('#txtPassword').val('');
+       
+       // $('#txtUserName').val('');
+       // $('#txtPassword').val('');
       }
       else {
         console.log('Error');
@@ -119,11 +120,11 @@
       var count = 0;
       //Output the final message to users through the socket.
       socket.on('chat message', function (msg) {
-        if(msg === null){
+        if (msg === null) {
           console.log('Email password not entered');
           return false;
         }
-        if(msg === 'login' || msg === 'Login'){
+        if (msg === 'login' || msg === 'Login') {
           //count = 0;
         }
         // if(msg === 'Email or password do not match'){
@@ -133,38 +134,45 @@
         while (msg === 'Login successful' && count < 1) {
           //console.log('Message from chat message', msg);
           socket.emit('chat message', msg);
-          count ++;
+          count++;
         }
-        if (typeof (msg) === 'string' ) {
-          if(msg === 'Login successful' && count === 1){
+        if (typeof (msg) === 'string') {
+          if (msg === 'Login successful' && count === 1) {
             $('#messages').append($('<li class="response-messages">').text(msg));
           }
-          else if(msg === 'Email or password do not match'){
+          else if (msg === 'Email or password do not match') {
             console.log(msg);
-            $("#txtUserName").val(""); $("#txtPassword").val("");
-          $('#messages').append($('<li class="response-messages">').text(msg));
+            //$("#txtUserName").val(""); $("#txtPassword").val("");
+            $('#messages').append($('<li class="response-messages">').text(msg));
           }
-          else{
+          else {
             $('#messages').append($('<li class="request-messages">').text(msg));
           }
+        }
+
+        if(msg.action !== undefined){
+          // console.log("hello");
+          // console.log("Action present",msg.fulfillmentMessages[0].text.text[0]);
+          $('#messages').append($('<li class="response-messages">').text(msg.fulfillmentMessages[0].text.text[0]));
         }
         //Login form template
         if ((msg.queryText == 'login' || msg.queryText == 'Login') && msg !== null) {
           console.log(count);
-          if (count === 1){
+          if (count === 1) {
             console.log(msg.fulfillmentText);
             $('#messages').append($('<li class="response-messages">').text(msg.fulfillmentText));
           }
-          else{
+          else {
+            $('#dvLogin').empty();
             var loginHTML = '<div class="bubble bot" id="dvLogin" style="border: 1px solid black">';
-          loginHTML = loginHTML + 'Username: <input id="txtUserName" type="text" name="user">';
-          loginHTML = loginHTML + '<br/><br/>Password: <input id="txtPassword" type="password" name="password">';
-          loginHTML = loginHTML + '<br/><br/><button class="suggestion" id="btnLogin" type="button" onclick="OnLoginButtonClick();" >Login</button>';
-          loginHTML = loginHTML + '<br/><br/><label id=lblMessage  style="display:none"></label></div>';
-          $('#messages').append($('<li class="response-messages">').html(loginHTML));
+            loginHTML = loginHTML + 'Username: <input id="txtUserName" type="text" name="user" value="">';
+            loginHTML = loginHTML + '<br/><br/>Password: <input id="txtPassword" type="password" name="password" value="">';
+            loginHTML = loginHTML + '<br/><br/><button class="suggestion" id="btnLogin" type="button" onclick="OnLoginButtonClick();" >Login</button>';
+            loginHTML = loginHTML + '<br/><br/><label id=lblMessage  style="display:none"></label></div>';
+            $('#messages').append($('<li class="response-messages">').html(loginHTML));
           }
         }
-        if(msg.queryText == 'Login successful'){
+        if (msg.queryText == 'Login successful') {
           $('#messages').append($('<li class="response-messages">').text(msg.fulfillmentText));
         }
         //Suggestion chips as response
@@ -175,7 +183,7 @@
             i++;
           })
         }
-        else if(msg.text !== undefined){
+        else if (msg.text !== undefined) {
           console.log(msg.text);
           $('#messages').append($('<li class="response-messages">').text(msg.text.text[0]));
         }
