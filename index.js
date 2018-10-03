@@ -244,18 +244,18 @@ io.on('connection', function (socket) {
           io.to(`${socketId}`).emit('chat message', body.queryResult);
         }
         else{
-          FTAConversation(socket.handshake.sessionID, body.queryResult.queryText);
+          // FTAConversation(socket.handshake.sessionID, body.queryResult.queryText);
           io.to(`${socketId}`).emit('chat message', body.queryResult);
         }
         
       }
       else if (body.queryResult.intent.displayName === 'Login_Successful_Intent') {
         console.log('Login Successful Intent');
-        FTAConversation(socket.handshake.sessionID, body.queryResult.fulfillmentText);
+        // FTAConversation(socket.handshake.sessionID, body.queryResult.fulfillmentText);
         io.to(`${socketId}`).emit('chat message', body.queryResult);
         if (body.queryResult.fulfillmentMessages[2].platform === 'ACTIONS_ON_GOOGLE') {
           console.log('Login successful intent- suggestion')
-          FTAConversation(socket.handshake.sessionID, body.queryResult.fulfillmentMessages[2].suggestions.suggestions[0].title);
+          // FTAConversation(socket.handshake.sessionID, body.queryResult.fulfillmentMessages[2].suggestions.suggestions[0].title);
           io.to(`${socketId}`).emit('chat message', body.queryResult.fulfillmentMessages[2].suggestions);
         }
       }
@@ -263,20 +263,20 @@ io.on('connection', function (socket) {
         console.log('VAT users');
         if (isLoggedin) {
           // io.to(`${socketId}`).emit('chat message', body.queryResult.fulfillmentMessages[0].text.text[0]);
-          FTAConversation(socket.handshake.sessionID, body.queryResult.fulfillmentMessages[0].text.text[0]);
+          // FTAConversation(socket.handshake.sessionID, body.queryResult.fulfillmentMessages[0].text.text[0]);
           io.to(`${socketId}`).emit('chat message', body.queryResult.fulfillmentMessages[0]);
         }
         else {
           body.queryResult.fulfillmentMessages[0].text.text[0] = 'You are not logged in. Please login to get the details.';
           //io.to(`${socketId}`).emit('chat message', body.queryResult.fulfillmentMessages[0].text.text[0]);
-          FTAConversation(socket.handshake.sessionID, body.queryResult.fulfillmentMessages[0].text.text[0]);
+          // FTAConversation(socket.handshake.sessionID, body.queryResult.fulfillmentMessages[0].text.text[0]);
           io.to(`${socketId}`).emit('chat message', body.queryResult.fulfillmentMessages[0]);
         }
       }
       else {
         if (body.queryResult.fulfillmentMessages[0].platform !== 'ACTIONS_ON_GOOGLE') {
           //console.log('Platform not', body.queryResult.fulfillmentText)
-          FTAConversation(socket.handshake.sessionID, body.queryResult.fulfillmentText);
+          // FTAConversation(socket.handshake.sessionID, body.queryResult.fulfillmentText);
           io.to(`${socketId}`).emit('chat message', body.queryResult.fulfillmentText);
         }
 
@@ -285,18 +285,18 @@ io.on('connection', function (socket) {
           if (body.queryResult.fulfillmentMessages[0].listSelect !== undefined || body.queryResult.fulfillmentMessages[1].listSelect !== undefined) {
             if (body.queryResult.fulfillmentMessages[0].simpleResponses !== undefined) {
               console.log('List Response');
-              FTAConversation(socket.handshake.sessionID, body.queryResult.fulfillmentMessages[0].simpleResponses.simpleResponses[0].textToSpeech);
+              // FTAConversation(socket.handshake.sessionID, body.queryResult.fulfillmentMessages[0].simpleResponses.simpleResponses[0].textToSpeech);
               io.to(`${socketId}`).emit('chat message', body.queryResult.fulfillmentMessages[0]);
               body.queryResult.fulfillmentMessages[2].listSelect.items.map(function (item) {
-                FTAConversation(socket.handshake.sessionID, item.info.key);
+                // FTAConversation(socket.handshake.sessionID, item.info.key);
               })
               io.to(`${socketId}`).emit('chat message', body.queryResult.fulfillmentMessages[2]);
             }
             else {
               console.log('List Response');
-              FTAConversation(socket.handshake.sessionID, body.queryResult.fulfillmentMessages[0].listSelect.title);
+              // FTAConversation(socket.handshake.sessionID, body.queryResult.fulfillmentMessages[0].listSelect.title);
               body.queryResult.fulfillmentMessages[0].listSelect.items.map(function (item) {
-                FTAConversation(socket.handshake.sessionID, item.info.key);
+                // FTAConversation(socket.handshake.sessionID, item.info.key);
               })
               io.to(`${socketId}`).emit('chat message', body.queryResult.fulfillmentMessages[0]);
             }
@@ -305,10 +305,10 @@ io.on('connection', function (socket) {
           else if (body.queryResult.fulfillmentMessages[0].suggestions !== undefined || body.queryResult.fulfillmentMessages[1].suggestions !== undefined) {
             if (body.queryResult.fulfillmentMessages[0].simpleResponses !== undefined) {
               console.log('Suggestion chips');
-              FTAConversation(socket.handshake.sessionID, body.queryResult.fulfillmentMessages[0].simpleResponses.simpleResponses[0].textToSpeech);
+              // FTAConversation(socket.handshake.sessionID, body.queryResult.fulfillmentMessages[0].simpleResponses.simpleResponses[0].textToSpeech);
               io.to(`${socketId}`).emit('chat message', body.queryResult.fulfillmentMessages[0]);
               body.queryResult.fulfillmentMessages[1].suggestions.suggestions.map(function (items) {
-                FTAConversation(socket.handshake.sessionID, items.title);
+                // FTAConversation(socket.handshake.sessionID, items.title);
               })
               io.to(`${socketId}`).emit('chat message', body.queryResult.fulfillmentMessages[1].suggestions);
             }
@@ -318,7 +318,7 @@ io.on('connection', function (socket) {
                 console.log('Basic card present with suggestions');
                 io.to(`${socketId}`).emit('chat message', body.queryResult.fulfillmentMessages[0]);
                 body.queryResult.fulfillmentMessages[1].suggestions.suggestions.map(function (items) {
-                  FTAConversation(socket.handshake.sessionID, items.title);
+                  // FTAConversation(socket.handshake.sessionID, items.title);
                 })
                 io.to(`${socketId}`).emit('chat message', body.queryResult.fulfillmentMessages[1].suggestions);
               }
@@ -326,18 +326,18 @@ io.on('connection', function (socket) {
           }
           else if (body.queryResult.fulfillmentMessages[0].simpleResponses !== undefined) {
             console.log('Simple response');
-            FTAConversation(socket.handshake.sessionID, body.queryResult.fulfillmentMessages[0].simpleResponses.simpleResponses[0].textToSpeech);
+            // FTAConversation(socket.handshake.sessionID, body.queryResult.fulfillmentMessages[0].simpleResponses.simpleResponses[0].textToSpeech);
             io.to(`${socketId}`).emit('chat message', body.queryResult.fulfillmentMessages[0]);
             if (body.queryResult.fulfillmentMessages[1].linkOutSuggestion !== undefined) {
               console.log('Link out messages', body.queryResult.fulfillmentMessages[1].linkOutSuggestion);
-              FTAConversation(socket.handshake.sessionID, body.queryResult.fulfillmentMessages[1].linkOutSuggestion.destinationName);
-              FTAConversation(socket.handshake.sessionID, body.queryResult.fulfillmentMessages[1].linkOutSuggestion.uri);
+              // FTAConversation(socket.handshake.sessionID, body.queryResult.fulfillmentMessages[1].linkOutSuggestion.destinationName);
+              // FTAConversation(socket.handshake.sessionID, body.queryResult.fulfillmentMessages[1].linkOutSuggestion.uri);
               io.to(`${socketId}`).emit('chat message', body.queryResult.fulfillmentMessages[1]);
             }
           }
           //Simple response
           else {
-            FTAConversation(socket.handshake.sessionID, 'Something went wrong');
+            // FTAConversation(socket.handshake.sessionID, 'Something went wrong');
             io.to(`${socketId}`).emit('chat message', 'Something went wrong');
           }
         }
@@ -393,7 +393,7 @@ io.on('connection', function (socket) {
       }
       if (msg !== 'Login successful') {
         if (typeof (msg) !== 'object') {
-          FTAConversation(socket.handshake.sessionID, msg);
+          // FTAConversation(socket.handshake.sessionID, msg);
         }
         io.to(`${socketId}`).emit('chat message', msg);
       }
