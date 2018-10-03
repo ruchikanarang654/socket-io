@@ -56,11 +56,11 @@
       
     } */
 
-    /* .response-messages {
-      float: left;
+    .response-messages {
+      float: right;
       width: 50%;
       margin-left: 68%;      
-    } */
+    }
 
     /* <!-- 
       #request-messages {
@@ -100,6 +100,8 @@
         $('#txtPassword').val('');
       }
       else {
+        $('#txtUserName').val('');
+        $('#txtPassword').val('');
         console.log('Error');
         $('#messages').append($('<li class="response-messages">').text('Please enter the correct details'));
       }
@@ -114,9 +116,17 @@
       var count = 0;
       //Output the final message to users through the socket.
       socket.on('chat message', function (msg) {
-        if(msg === 'login'){
-          count = 0;
+        if(msg === null){
+          console.log('Email password not entered');
+          return false;
         }
+        if(msg === 'login'){
+          //count = 0;
+        }
+        // if(msg === 'Email or password do not match'){
+        //   console.log(msg);
+        //   $('#messages').append($('<li class="response-messages">').text(msg));
+        // }
         while (msg === 'Login successful' && count < 1) {
           //console.log('Message from chat message', msg);
           socket.emit('chat message', msg);
@@ -126,18 +136,32 @@
           if(msg === 'Login successful' && count === 1){
             $('#messages').append($('<li class="response-messages">').text(msg));
           }
+          else if(msg === 'Email or password do not match'){
+            console.log(msg);
+          $('#messages').append($('<li class="response-messages">').text(msg));
+          }
           else{
-            $('#messages').append($('<li class="response-messages">').text(msg));
+            $('#messages').append($('<li class="request-messages">').text(msg));
           }
         }
         //Login form template
-        if (msg.queryText == 'login') {
-          var loginHTML = '<div class="bubble bot" id="dvLogin" style="border: 1px solid black">';
+        if (msg.queryText == 'login' && msg !== null) {
+          console.log(count);
+          if (count === 1){
+            console.log(msg.fulfillmentText);
+            $('#messages').append($('<li class="response-messages">').text(msg.fulfillmentText));
+          }
+          else{
+            var loginHTML = '<div class="bubble bot" id="dvLogin" style="border: 1px solid black">';
           loginHTML = loginHTML + 'Username: <input id="txtUserName" type="text" name="user">';
           loginHTML = loginHTML + '<br/><br/>Password: <input id="txtPassword" type="password" name="password">';
           loginHTML = loginHTML + '<br/><br/><button class="suggestion" id="btnLogin" type="button" onclick="OnLoginButtonClick();" >Login</button>';
           loginHTML = loginHTML + '<br/><br/><label id=lblMessage  style="display:none"></label></div>';
           $('#messages').append($('<li class="response-messages">').html(loginHTML));
+          }
+        }
+        if(msg.queryText == 'Login successful'){
+          $('#messages').append($('<li class="response-messages">').text(msg.fulfillmentText));
         }
         //Suggestion chips as response
         if (msg.suggestions !== undefined) {
@@ -146,6 +170,10 @@
             $('#messages').append('<li class="response-messages"><input type="button" data-id= "' + i + '" class="suggestion-chips" value="' + item.title + '"  /></li>');
             i++;
           })
+        }
+        else if(msg.text !== undefined){
+          console.log(msg.text);
+          $('#messages').append($('<li class="response-messages">').text(msg.text.text[0]));
         }
         //List as a response
         else if (msg.listSelect) {
@@ -188,7 +216,7 @@
           });
 
           $.each(msg.basicCard.image, function (index, value) {
-            $('#messages').append('<div><li class="response-messages"><img src="' + value + '" alt="' + title + '" width="100" height="100"></li><span>' + uri_title + '</span><br><a href="' + url + '" target="_blank">For more details</a><div>');
+            $('#messages').append('<div><li class="response-messages"><img src="' + value + '" alt="' + title + '" width="100" height="100"><span>' + uri_title + '</span><br><a href="' + url + '" target="_blank">For more details</a></li><div>');
           });
           return false;
         }

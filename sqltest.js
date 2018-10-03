@@ -105,7 +105,7 @@ var date = dateTime.create();
 var Connection = require('tedious').Connection;
 var Request = require('tedious').Request;
 var session = require('express-session');
-// var TYPES = require('tedious').TYPES;
+var TYPES = require('tedious').TYPES;
 var session = require("express-session")({
   secret: "my-secret",
   resave: true,
@@ -140,101 +140,77 @@ io.use(sharedsession(session));
 
 io.on('connection', function (socket) {
   var isLoggedin;
+  var responseMessage;
+   //Function to retrieve data from Azure db to check login credentials of user
+   function GetData(message, cb){
+
+    var config =
+                {
+                    userName: 'SystematixBOT', 
+                    password: 'SiplBOT@4844', 
+                    server: 'systematixbotserver.database.windows.net', 
+                    options:
+                        {
+                            database: 'HRBot' 
+                            , encrypt: true
+                        }
+                }
+            var connection = new Connection(config);
+
+            connection.on('connect', function (err) {
+                if (err) {
+                    console.log(err)
+                }
+                else {
+                    queryDatabase()
+                }
+            }
+            );
+    
+            function queryDatabase() {
+                var sql = "select * from EmployeeDetail where EmployeeEmail='" + message.usrName + "' and Password='" + message.pwd + "'";
+                // Read all rows from table
+                request = new Request(sql,
+                    function (err, rowCount, rows) {
+                        if (rowCount === 1) {
+                            cb(rowCount);
+                        }
+                        else {
+                          if(message.usrName && message.pwd)
+                          cb('Email or password do not match.');
+                          io.to(`${socketId}`).emit('chat message', 'Email or password do not match.');
+                        }
+                    }
+                );
+                //Retrieve required data from table
+                request.on('row', function (columns) {
+                    columns.forEach(function (column) {
+                        console.log("%s", column.value);
+                    });
+                });
+                connection.execSql(request);
+            }
+    }
   //console.log('Socket client',socket.client);
   console.log('Socket session id', socket.handshake.sessionID);
   socket.handshake.session.save();
 
-  // function FTAConversation() {
-  //   var sqlParams = [];
-
-  //   var id_session = {
-  //     name: 'SessionId'
-  //     , type: 'varchar'
-  //     , value: socket.handshake.sessionID
-  //   }
-
-  //   var user_id = {
-  //     name: 'UserId',
-  //     type: 'varchar',
-  //     value: 'ruchika.narang@systematixindia.com'
-  //   }
-
-  //   var conversation = {
-  //     name: 'Conversation',
-  //     type: 'varchar',
-  //     value: 'Hello'
-  //   }
-
-  //   sqlParams.push(id_session);
-  //   sqlParams.push(user_id);
-  //   sqlParams.push(conversation);
-
-  //   var config =
-  //     {
-  //       userName: 'FTAbotAdmin',
-  //       password: 'Sipl@4844',
-  //       server: 'ftachatbotserver.database.windows.net',
-  //       options:
-  //         {
-  //           database: 'FTAChatbotDB'
-  //           , encrypt: true
-  //         }
-  //     }
-  //   var connection = new Connection(config);
-
-  //   connection.on('connect', function (err) {
-  //     if (err) {
-  //       console.log(err)
-  //     }
-  //     else {
-  //       queryMOFDatabase()
-  //     }
-  //   }
-  //   );
-  //   function queryMOFDatabase() {
-  //     console.log('One');
-  //     request = new Request(('sp_InsertUpdateFTAConversation', function (err, rows) {
-  //       if (err) {
-  //         console.log(err)
-  //       }
-  //       else {
-  //         console.log('Result',result)
-  //       }
-  //     })
-  //     );
-  //     request.on('row', function (columns) {
-  //       //console.log(columns.value);
-  //       columns.forEach(function (column) {
-  //         console.log("%s", column.value);
-  //       });
-  //     });
-  //     connection.execSql(request);
-  //   }
-  // }
-
-  //   connection.execute('sp_InsertUpdateFTAConversation', sqlParams, function(err, result){
-  //     console.log('Call from SP');
-  //     if (err) {
-  //       console.log(err)
-  //     }
-  //     else {
-  //       console.log(result)
-  //     }
-  //   })
-  // }
-
-  //FTAConversation();
-  //console.log(FTAConversation());
-  function GetData(message, cb) {
+  function FTAConversation(idOfSession, respMessage) {
+    if(responseMessage !== '' && responseMessage !== undefined){
+      responseMessage += ' '+respMessage;
+    }
+    else{
+      responseMessage = respMessage;
+    }
 
     var config =
       {
-        userName: 'SystematixBOT',
-        password: 'SiplBOT@4844',
-        server: 'systematixbotserver.database.windows.net',
+        userName: 'FTAbotAdmin',
+        password: 'Sipl@4844',
+        server: 'ftachatbotserver.database.windows.net',
         options:
           {
-            database: 'HRBot'
+            database: 'FTAChatbotDB'
             , encrypt: true
           }
       }
@@ -245,40 +221,52 @@ io.on('connection', function (socket) {
         console.log(err)
       }
       else {
-        queryDatabase()
+        queryMOFDatabase()
       }
     }
     );
-
-    function queryDatabase() {
-      console.log('Reading rows from the Table...');
-      var sql = "select * from EmployeeDetail where EmployeeEmail='" + message.usrName + "' and Password='" + message.pwd + "'";
-      //console.log('query', sql);
-      // Read all rows from table
-      request = new Request(sql,
-        function (err, rowCount, rows) {
-          if (rowCount === 1) {
-            cb(rowCount);
-            //io.to(`${socketId}`).emit('chat message', 'Login successful');
-            //process.exit();
-          }
-          else {
-            console.log('Error', err);
-          }
-          //console.log(rowCount + ' row(s) returned');
-          //process.exit();
+    function queryMOFDatabase() {
+      console.log('One');
+      request = new Request('sp_InsertUpdateFTAConversation', function (err) {
+        if (err) {
+          console.log(err)
         }
-      );
-
-      request.on('row', function (columns) {
-        //console.log(columns.value);
-        columns.forEach(function (column) {
-          console.log("%s", column.value);
-        });
+        connection.close();
       });
-      connection.execSql(request);
+
+      request.addParameter('SessionId', TYPES.VarChar, idOfSession);
+      request.addParameter('UserId', TYPES.VarChar, '');
+      request.addParameter('Conversation', TYPES.VarChar, responseMessage);
+      request.addOutputParameter('IsSuccess', TYPES.Bit);
+      request.on('returnValue', function(paramName, value, metadata) {
+        console.log(paramName + ' : ' + value);
+      });
+      // request.on('row', function (columns) {
+      //   //console.log(columns.value);
+      //   columns.forEach(function (column) {
+      //     console.log("%s", column.value);
+      //   });
+      // });
+      connection.callProcedure(request);
     }
   }
+  
+
+    // connection.execute('sp_InsertUpdateFTAConversation', sqlParams, function(err, result){
+    //   console.log('Call from SP');
+    //   if (err) {
+    //     console.log(err)
+    //   }
+    //   else {
+    //     console.log(result)
+    //   }
+    // })
+  
+
+
+  //FTAConversation();
+  //console.log(FTAConversation());
+  
   var socketId = socket.id;
 
   socket.on('chat message', function (msg) {
@@ -392,30 +380,37 @@ io.on('connection', function (socket) {
     function ResponseToDialogflow(body) {
       if (body.queryResult.intent.displayName === 'Login_Intent') {
         //console.log('login intent', body.queryResult);
+        // FTAConversation(socket.handshake.sessionID, body.queryResult.queryText);
         io.to(`${socketId}`).emit('chat message', body.queryResult);
       }
       else if (body.queryResult.intent.displayName === 'Login_Successful_Intent') {
         //console.log('login intent', body.queryResult.fulfillmentMessages[2]);
-        io.to(`${socketId}`).emit('chat message', body.queryResult.fulfillmentText);
+        // FTAConversation(socket.handshake.sessionID, body.queryResult.fulfillmentText);
+        console.log('Login success', body.queryResult);
+        io.to(`${socketId}`).emit('chat message', body.queryResult); 
         if (body.queryResult.fulfillmentMessages[2].platform === 'ACTIONS_ON_GOOGLE') {
-          //console.log('Suggestion chips from login success intent',body.queryResult.fulfillmentMessages[2].suggestions);
+          // FTAConversation(socket.handshake.sessionID, body.queryResult.fulfillmentMessages[2].suggestions.suggestions[0].title);
+          // console.log('Suggestion chips from login success intent',body.queryResult.fulfillmentMessages[2].suggestions.suggestions[0].title);  
           io.to(`${socketId}`).emit('chat message', body.queryResult.fulfillmentMessages[2].suggestions);
         }
       }
       else if (body.queryResult.intent.displayName === 'Total_Number_VAT_Users_Intent') {
         //console.log('VAT users', body.queryResult.fulfillmentMessages[0].text.text[0]);
         if (isLoggedin) {
-          io.to(`${socketId}`).emit('chat message', body.queryResult.fulfillmentMessages[0].text.text[0]);
+          // FTAConversation(socket.handshake.sessionID, body.queryResult.fulfillmentMessages[0].text.text[0]);
+          io.to(`${socketId}`).emit('chat message', body.queryResult.fulfillmentMessages[0]);
         }
         else {
           body.queryResult.fulfillmentMessages[0].text.text[0] = 'You are not logged in. Please login to get the details.';
-          io.to(`${socketId}`).emit('chat message', body.queryResult.fulfillmentMessages[0].text.text[0]);
+          // FTAConversation(socket.handshake.sessionID, body.queryResult.fulfillmentMessages[0].text.text[0]);
+          io.to(`${socketId}`).emit('chat message', body.queryResult.fulfillmentMessages[0]);
         }
         //io.to(`${socketId}`).emit('chat message', body.queryResult.fulfillmentMessages[0].text.text[0]);
       }
       else {
         if (body.queryResult.fulfillmentMessages[0].platform !== 'ACTIONS_ON_GOOGLE') {
           //console.log('Platform not', body.queryResult.fulfillmentText)
+          // FTAConversation(socket.handshake.sessionID, body.queryResult.fulfillmentText);
           io.to(`${socketId}`).emit('chat message', body.queryResult.fulfillmentText);
         }
 
@@ -425,81 +420,71 @@ io.on('connection', function (socket) {
             //if (body.queryResult.fulfillmentMessages[0].listSelect !== undefined || body.queryResult.fulfillmentMessages[1] !== undefined) {
             if (body.queryResult.fulfillmentMessages[0].simpleResponses !== undefined) {
               //io.to(`${socketId}`).emit('chat message', body.queryResult.fulfillmentMessages[0].simpleResponses.simpleResponses[0].textToSpeech);
+              console.log('List select template', body.queryResult.fulfillmentMessages[1].listSelect.title);
               //io.to(`${socketId}`).emit('chat message', body.queryResult.fulfillmentMessages[1].listSelect.title);
+              // FTAConversation(socket.handshake.sessionID, body.queryResult.fulfillmentMessages[0].simpleResponses.simpleResponses[0].textToSpeech);
               io.to(`${socketId}`).emit('chat message', body.queryResult.fulfillmentMessages[0]);
+              body.queryResult.fulfillmentMessages[2].listSelect.items.map(function(item){
+                // FTAConversation(socket.handshake.sessionID, item.info.key);
+              })
               io.to(`${socketId}`).emit('chat message', body.queryResult.fulfillmentMessages[2]);
             }
             else {
-              //io.to(`${socketId}`).emit('chat message', body.queryResult.fulfillmentMessages[0].listSelect.title);
-              //console.log('items in list', body.queryResult.fulfillmentMessages[0].listSelect.items);
+              // FTAConversation(socket.handshake.sessionID, body.queryResult.fulfillmentMessages[0].listSelect.title);
+              body.queryResult.fulfillmentMessages[0].listSelect.items.map(function(item){
+                // FTAConversation(socket.handshake.sessionID, item.info.key);
+              })
               io.to(`${socketId}`).emit('chat message', body.queryResult.fulfillmentMessages[0]);
             }
           }
           //Suggestion chips and basic card with suggestion chips
           else if (body.queryResult.fulfillmentMessages[0].suggestions !== undefined || body.queryResult.fulfillmentMessages[1].suggestions !== undefined) {
             if (body.queryResult.fulfillmentMessages[0].simpleResponses !== undefined) {
-              //console.log('Suggestion chips');
+              console.log('Suggestion chips');
               //io.to(`${socketId}`).emit('chat message', body.queryResult.fulfillmentMessages[0].simpleResponses.simpleResponses[0].textToSpeech);
+              // FTAConversation(socket.handshake.sessionID, body.queryResult.fulfillmentMessages[0].simpleResponses.simpleResponses[0].textToSpeech);
               io.to(`${socketId}`).emit('chat message', body.queryResult.fulfillmentMessages[0]);
+              body.queryResult.fulfillmentMessages[1].suggestions.suggestions.map(function(items){
+                // FTAConversation(socket.handshake.sessionID, items.title);
+              })
               io.to(`${socketId}`).emit('chat message', body.queryResult.fulfillmentMessages[1].suggestions);
-              //console.log(body.queryResult.fulfillmentMessages[1].suggestions);
             }
             else {
               //console.log('Only quick replies');
               if (body.queryResult.fulfillmentMessages[0].basicCard !== undefined) {
                 console.log('Basic card present');
-                //console.log('basic card result', body.queryResult.fulfillmentMessages[0])
+                console.log('basic card result', body.queryResult.fulfillmentMessages[1].suggestions)
+                console.log(typeof(body.queryResult.fulfillmentMessages[1].suggestions));
                 io.to(`${socketId}`).emit('chat message', body.queryResult.fulfillmentMessages[0]);
+                body.queryResult.fulfillmentMessages[1].suggestions.suggestions.map(function(items){
+                  // FTAConversation(socket.handshake.sessionID, items.title);
+                })
                 io.to(`${socketId}`).emit('chat message', body.queryResult.fulfillmentMessages[1].suggestions);
               }
             }
           }
           else if (body.queryResult.fulfillmentMessages[0].simpleResponses !== undefined) {
             console.log('Simple response');
+            //console.log('Simple response body', body.queryResult.fulfillmentMessages);
+            // FTAConversation(socket.handshake.sessionID, body.queryResult.fulfillmentMessages[0].simpleResponses.simpleResponses[0].textToSpeech);
+              io.to(`${socketId}`).emit('chat message', body.queryResult.fulfillmentMessages[0]);
             // io.to(`${socketId}`).emit('chat message', body.queryResult.fulfillmentMessages[0].simpleResponses.simpleResponses[0].textToSpeech);
-            if (body.queryResult.fulfillmentMessages[1] !== undefined) {
-              io.to(`${socketId}`).emit('chat message', body.queryResult.fulfillmentMessages[0]);
-              //console.log('Link out messages', body.queryResult.fulfillmentMessages[1]);
+            if (body.queryResult.fulfillmentMessages[1].linkOutSuggestion !== undefined) {
+              console.log('Link out messages', body.queryResult.fulfillmentMessages[1].linkOutSuggestion);
+              // FTAConversation(socket.handshake.sessionID, body.queryResult.fulfillmentMessages[1].linkOutSuggestion.destinationName);
+              // FTAConversation(socket.handshake.sessionID, body.queryResult.fulfillmentMessages[1].linkOutSuggestion.uri);
               io.to(`${socketId}`).emit('chat message', body.queryResult.fulfillmentMessages[1]);
-            }
-            else {
-              io.to(`${socketId}`).emit('chat message', body.queryResult.fulfillmentMessages[0]);
             }
           }
           //Simple response
           else {
+            // FTAConversation(socket.handshake.sessionID, 'Something went wrong');
             io.to(`${socketId}`).emit('chat message', 'Something went wrong');
           }
         }
       }
     }
 
-
-    //   function main() {
-    //     var dataPromise = GenerateAccessToken();
-    //     console.log(dataPromise);
-    //     // Get user details after that get followers from URL
-    //     dataPromise
-    //                .then(function(result) {
-    //                  console.log(result);
-    //                     var token_val = result; 
-    //                     // Do one more async operation here
-    //                     var anotherPromise = RequestDialogflow(token_val)
-    //                     console.log(anotherPromise);
-    //                     anotherPromise.then(function(response_body){
-    //                       console.log(response_body);
-    //                       var responseBody = response_body;
-    //                       ResponseToDialogflow(responseBody);
-    //                       //console.log(responsePromise);
-    //                       // responsePromise.then(function(dialogflowResp){
-    //                       //   console.log(dialogflowResp);
-    //                       // })
-
-    //                     })
-    //                 })
-    // }
-
-    // main();
 
     if (!localStorage.getItem('token') || (!localStorage.getItem('time'))) {
       console.log('if');
@@ -550,22 +535,21 @@ io.on('connection', function (socket) {
         //console.log(anotherPromise);
         anotherPromise.then(function (response_body) {
           ResponseToDialogflow(response_body);
-          FTAConversation();
           return response_body;
         })
       }
-
-
 
       if (msg === 'Login successful') {
         //console.log('Successful login');
       }
       else {
+        if(typeof(msg) !== 'object'){
+          // FTAConversation(socket.handshake.sessionID, msg);
+        } 
         io.to(`${socketId}`).emit('chat message', msg);
       }
     }
   });
-
 })
 
 http.listen(port, function () {
