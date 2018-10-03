@@ -83,16 +83,21 @@
   <script src="/socket.io/socket.io.js"></script>
   <script>
     var socket = io();
+    var obj;
     //function for login button click
     function OnLoginButtonClick() {
-      var obj = {
+      
+      obj = {
         usrName: $("#txtUserName").val(),
         pwd: $("#txtPassword").val()
       }
       //console.log('Object values', obj);
       socket.emit('chat message', obj);
+      console.log('Object value' , obj);
       //socket.emit('data', password);
       if (obj.usrName !== "" & obj.pwd !== "") {
+        $("#lblMessage").text("");
+            $("#lblMessage").hide();
         //alert(username + "," + password);
         $("#lblMessage").text("");
         $("#dvLogin").hide();
@@ -100,8 +105,6 @@
         $('#txtPassword').val('');
       }
       else {
-        $('#txtUserName').val('');
-        $('#txtPassword').val('');
         console.log('Error');
         $('#messages').append($('<li class="response-messages">').text('Please enter the correct details'));
       }
@@ -120,7 +123,7 @@
           console.log('Email password not entered');
           return false;
         }
-        if(msg === 'login'){
+        if(msg === 'login' || msg === 'Login'){
           //count = 0;
         }
         // if(msg === 'Email or password do not match'){
@@ -138,6 +141,7 @@
           }
           else if(msg === 'Email or password do not match'){
             console.log(msg);
+            $("#txtUserName").val(""); $("#txtPassword").val("");
           $('#messages').append($('<li class="response-messages">').text(msg));
           }
           else{
@@ -145,7 +149,7 @@
           }
         }
         //Login form template
-        if (msg.queryText == 'login' && msg !== null) {
+        if ((msg.queryText == 'login' || msg.queryText == 'Login') && msg !== null) {
           console.log(count);
           if (count === 1){
             console.log(msg.fulfillmentText);
